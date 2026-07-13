@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "description": "Backend API for the Payflow credit card checkout.",
+  "packageManager": "npm@11.13.0",
+  "engines": {
+    "node": "24.16.0",
+    "npm": "11.13.0"
+  },
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
