@@ -5,6 +5,8 @@ RUN npm ci
 
 FROM node:24-alpine AS builder
 WORKDIR /app
+ARG DATABASE_URL=postgresql://payflow:payflow@postgres:5432/payflow?schema=public
+ENV DATABASE_URL=${DATABASE_URL}
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run prisma:generate
@@ -19,4 +21,4 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/prisma ./prisma
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["node", "dist/src/main.js"]

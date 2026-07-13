@@ -23,12 +23,28 @@ This API follows a pragmatic Hexagonal/Clean Architecture:
 
 ## Local Setup
 
-Pending implementation. Expected commands:
+Install dependencies:
 
 ```bash
 npm install
-docker compose up -d
-npm run prisma:migrate
+```
+
+Start PostgreSQL:
+
+```bash
+docker compose up -d postgres
+```
+
+Run migrations and seed products:
+
+```bash
+npm run prisma:deploy
+npm run prisma:seed
+```
+
+Start the API:
+
+```bash
 npm run start:dev
 ```
 
@@ -42,6 +58,32 @@ npm run test:cov
 ```
 
 Coverage target: more than 80%.
+
+## Endpoints
+
+```text
+GET /health
+GET /products
+GET /products/:id
+```
+
+## Database
+
+Local Docker connection:
+
+```text
+Host: localhost
+Port: 5432
+Database: payflow
+User: payflow
+Password: payflow
+```
+
+When the API runs inside Docker Compose, it connects to PostgreSQL through the internal service host:
+
+```text
+postgres:5432
+```
 
 ## Environment
 
