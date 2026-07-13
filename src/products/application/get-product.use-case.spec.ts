@@ -19,6 +19,7 @@ describe('GetProductUseCase', () => {
     const repository: jest.Mocked<ProductsRepository> = {
       findAll: jest.fn(),
       findById,
+      findByIds: jest.fn(),
     };
     const useCase = new GetProductUseCase(repository);
 
@@ -30,6 +31,7 @@ describe('GetProductUseCase', () => {
     const repository: jest.Mocked<ProductsRepository> = {
       findAll: jest.fn(),
       findById: jest.fn().mockResolvedValue(null),
+      findByIds: jest.fn(),
     };
     const useCase = new GetProductUseCase(repository);
 

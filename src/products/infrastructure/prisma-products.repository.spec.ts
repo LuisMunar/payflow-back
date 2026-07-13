@@ -59,4 +59,20 @@ describe('PrismaProductsRepository', () => {
 
     await expect(repository.findById(prismaProduct.id)).resolves.toBeNull();
   });
+
+  it('finds products by ids', async () => {
+    const findMany = jest.fn().mockResolvedValue([prismaProduct]);
+    const prisma = {
+      product: {
+        findMany,
+        findUnique: jest.fn(),
+      },
+    } as unknown as PrismaService;
+    const repository = new PrismaProductsRepository(prisma);
+
+    const products = await repository.findByIds([prismaProduct.id]);
+
+    expect(findMany).toHaveBeenCalledWith({ where: { id: { in: [prismaProduct.id] } } });
+    expect(products).toHaveLength(1);
+  });
 });
