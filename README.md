@@ -70,6 +70,7 @@ GET /products
 GET /products/:id
 POST /transactions
 GET /transactions/:id
+POST /transactions/:id/payments/card
 ```
 
 Create a pending transaction:
@@ -90,6 +91,25 @@ curl -X POST http://localhost:3000/transactions \
 ```
 
 The backend validates stock and calculates totals server-side. Stock is not decremented when the transaction is created as `PENDING`; it must be decremented only after an approved payment.
+
+Process a card payment for an existing pending transaction:
+
+```bash
+curl -X POST http://localhost:3000/transactions/2f860c3a-c995-459e-b8f9-7a945dfd9157/payments/card \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "card": {
+      "number": "4242424242424242",
+      "expMonth": "12",
+      "expYear": "30",
+      "cvc": "123",
+      "cardHolder": "Luis Munar"
+    },
+    "installments": 1
+  }'
+```
+
+The API tokenizes the card with the configured sandbox provider, creates the external payment, maps the provider status to the local transaction status and decrements stock only when the final status is `APPROVED`.
 
 ## Database
 

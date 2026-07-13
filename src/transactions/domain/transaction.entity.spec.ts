@@ -2,7 +2,10 @@ import {
   InsufficientProductStockError,
   Product,
 } from '../../products/domain/product.entity';
-import { Transaction } from './transaction.entity';
+import {
+  Transaction,
+  TransactionCannotBeProcessedError,
+} from './transaction.entity';
 import { TransactionStatus } from './transaction-status';
 
 describe('Transaction', () => {
@@ -53,5 +56,44 @@ describe('Transaction', () => {
         items: [{ product: unavailableProduct, quantity: 2 }],
       }),
     ).toThrow(InsufficientProductStockError);
+  });
+
+  it('applies an approved gateway result to a pending transaction', () => {
+    const transaction = Transaction.createPending({
+      customerName: 'Luis Munar',
+      customerEmail: 'luis@example.test',
+      items: [{ product, quantity: 1 }],
+    });
+
+    transaction.applyGatewayResult({
+      status: TransactionStatus.APPROVED,
+      gatewayTransactionId: 'gateway-transaction-id',
+      gatewayStatus: 'APPROVED',
+      cardBrand: 'VISA',
+      cardLastFour: '4242',
+    });
+
+    expect(transaction.isApproved()).toBe(true);
+    expect(transaction.gatewayTransactionId).toBe('gateway-transaction-id');
+    expect(transaction.gatewayStatus).toBe('APPROVED');
+    expect(transaction.cardBrand).toBe('VISA');
+    expect(transaction.cardLastFour).toBe('4242');
+  });
+
+  it('does not allow processing a transaction twice', () => {
+    const transaction = new Transaction({
+      id: '2f860c3a-c995-459e-b8f9-7a945dfd9157',
+      reference: 'PF-reference',
+      status: TransactionStatus.APPROVED,
+      amountInCents: 18990000,
+      currency: 'COP',
+      customerName: 'Luis Munar',
+      customerEmail: 'luis@example.test',
+      items: [],
+    });
+
+    expect(() => transaction.ensureCanBeProcessed()).toThrow(
+      TransactionCannotBeProcessedError,
+    );
   });
 });

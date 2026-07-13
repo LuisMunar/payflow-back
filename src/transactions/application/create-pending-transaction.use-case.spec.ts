@@ -53,6 +53,7 @@ describe('CreatePendingTransactionUseCase', () => {
     };
     const transactionsRepository: jest.Mocked<TransactionsRepository> = {
       create,
+      completePayment: jest.fn(),
       findById: jest.fn(),
     };
     const useCase = new CreatePendingTransactionUseCase(
@@ -84,6 +85,7 @@ describe('CreatePendingTransactionUseCase', () => {
     };
     const transactionsRepository: jest.Mocked<TransactionsRepository> = {
       create: jest.fn(),
+      completePayment: jest.fn(),
       findById: jest.fn(),
     };
     const useCase = new CreatePendingTransactionUseCase(
