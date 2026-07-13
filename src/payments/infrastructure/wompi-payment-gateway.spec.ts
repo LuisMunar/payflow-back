@@ -170,6 +170,94 @@ describe('WompiPaymentGateway', () => {
     expect(result.status).toBe(TransactionStatus.ERROR);
     expect(result.gatewayStatus).toBe('ERROR');
   });
+
+  it('returns pending when polling attempts are exhausted', async () => {
+    jest.useFakeTimers();
+    const fetchMock = jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(createAcceptanceTokensResponse())
+      .mockResolvedValueOnce(createCardTokenResponse())
+      .mockResolvedValueOnce(createPendingTransactionResponse())
+      .mockResolvedValue(createPendingTransactionResponse());
+    const gateway = new WompiPaymentGateway(configService);
+
+    const paymentResult = gateway.processCardPayment(input);
+
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await jest.advanceTimersByTimeAsync(1000);
+    }
+
+    const result = await paymentResult;
+
+    expect(result.status).toBe(TransactionStatus.PENDING);
+    expect(result.gatewayStatus).toBe('PENDING');
+    expect(fetchMock).toHaveBeenCalledTimes(9);
+  });
+
+  it('maps unknown gateway statuses to pending', async () => {
+    jest.useFakeTimers();
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(createAcceptanceTokensResponse())
+      .mockResolvedValueOnce(createCardTokenResponse())
+      .mockResolvedValueOnce(
+        createResponse({
+          data: {
+            id: 'gateway-transaction',
+            status: 'UNKNOWN_STATUS',
+            payment_method: null,
+          },
+        }),
+      )
+      .mockResolvedValue(createPendingTransactionResponse());
+    const gateway = new WompiPaymentGateway(configService);
+
+    const paymentResult = gateway.processCardPayment(input);
+
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await jest.advanceTimersByTimeAsync(1000);
+    }
+
+    const result = await paymentResult;
+
+    expect(result.status).toBe(TransactionStatus.PENDING);
+    expect(result.gatewayStatus).toBe('PENDING');
+  });
+
+  it('wraps network failures as payment gateway errors', async () => {
+    jest.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('Network down'));
+    const gateway = new WompiPaymentGateway(configService);
+
+    await expect(gateway.processCardPayment(input)).rejects.toBeInstanceOf(
+      PaymentGatewayError,
+    );
+  });
+
+  it('falls back to null card metadata when the gateway omits card data', async () => {
+    jest
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(createAcceptanceTokensResponse())
+      .mockResolvedValueOnce(createCardTokenResponse({ brand: null, lastFour: null }))
+      .mockResolvedValueOnce(
+        createResponse({
+          data: {
+            id: 'gateway-transaction',
+            status: 'APPROVED',
+            payment_method: {
+              extra: null,
+              brand: null,
+              last_four: null,
+            },
+          },
+        }),
+      );
+    const gateway = new WompiPaymentGateway(configService);
+
+    const result = await gateway.processCardPayment(input);
+
+    expect(result.cardBrand).toBeNull();
+    expect(result.cardLastFour).toBeNull();
+  });
 });
 
 function createResponse(
@@ -195,13 +283,26 @@ function createAcceptanceTokensResponse(): Response {
   });
 }
 
-function createCardTokenResponse(): Response {
+function createCardTokenResponse(options?: {
+  brand?: string | null;
+  lastFour?: string | null;
+}): Response {
   return createResponse({
     status: 'CREATED',
     data: {
       id: 'card-token',
-      brand: 'VISA',
-      last_four: '4242',
+      brand: options && 'brand' in options ? options.brand : 'VISA',
+      last_four: options && 'lastFour' in options ? options.lastFour : '4242',
+    },
+  });
+}
+
+function createPendingTransactionResponse(): Response {
+  return createResponse({
+    data: {
+      id: 'gateway-transaction',
+      status: 'PENDING',
+      payment_method: null,
     },
   });
 }

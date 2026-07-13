@@ -139,4 +139,35 @@ describe('ProcessCardPaymentUseCase', () => {
       PaymentTransactionNotFoundError,
     );
   });
+
+  it('rethrows unexpected payment gateway errors', async () => {
+    const unexpectedError = new Error('Unexpected provider failure');
+    const completePayment = jest.fn();
+    const transactionsRepository: jest.Mocked<TransactionsRepository> = {
+      create: jest.fn(),
+      completePayment,
+      findById: jest.fn().mockResolvedValue(
+        new Transaction({
+          id: transaction.id,
+          reference: transaction.reference,
+          status: TransactionStatus.PENDING,
+          amountInCents: transaction.amountInCents,
+          currency: transaction.currency,
+          customerName: transaction.customerName,
+          customerEmail: transaction.customerEmail,
+          items: transaction.items,
+        }),
+      ),
+    };
+    const paymentGateway: jest.Mocked<PaymentGateway> = {
+      processCardPayment: jest.fn().mockRejectedValue(unexpectedError),
+    };
+    const useCase = new ProcessCardPaymentUseCase(
+      transactionsRepository,
+      paymentGateway,
+    );
+
+    await expect(useCase.execute(input)).rejects.toThrow(unexpectedError);
+    expect(completePayment).not.toHaveBeenCalled();
+  });
 });

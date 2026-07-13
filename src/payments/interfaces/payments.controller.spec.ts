@@ -79,4 +79,15 @@ describe('PaymentsController', () => {
       controller.processCardPayment(transaction.id as string, dto),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it('rethrows unexpected errors', async () => {
+    const unexpectedError = new Error('Unexpected error');
+    const controller = new PaymentsController({
+      execute: jest.fn().mockRejectedValue(unexpectedError),
+    } as unknown as ProcessCardPaymentUseCase);
+
+    await expect(
+      controller.processCardPayment(transaction.id as string, dto),
+    ).rejects.toThrow(unexpectedError);
+  });
 });
