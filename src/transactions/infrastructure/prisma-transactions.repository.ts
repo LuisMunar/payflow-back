@@ -36,6 +36,45 @@ export class PrismaTransactionsRepository implements TransactionsRepository {
     return PrismaTransactionMapper.toDomain(createdTransaction);
   }
 
+  async completePayment(transaction: Transaction): Promise<Transaction> {
+    const transactionId = transaction.id;
+
+    if (!transactionId) {
+      throw new Error('Transaction id is required to complete payment');
+    }
+
+    const updatedTransaction = await this.prisma.$transaction(async (tx) => {
+      const savedTransaction = await tx.transaction.update({
+        where: { id: transactionId },
+        data: {
+          status: transaction.status,
+          cardBrand: transaction.cardBrand,
+          cardLastFour: transaction.cardLastFour,
+          gatewayTransactionId: transaction.gatewayTransactionId,
+          gatewayStatus: transaction.gatewayStatus,
+        },
+        include: { items: true },
+      });
+
+      if (transaction.isApproved()) {
+        for (const item of transaction.items) {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: {
+              stock: {
+                decrement: item.quantity,
+              },
+            },
+          });
+        }
+      }
+
+      return savedTransaction;
+    });
+
+    return PrismaTransactionMapper.toDomain(updatedTransaction);
+  }
+
   async findById(id: string): Promise<Transaction | null> {
     const transaction = await this.prisma.transaction.findUnique({
       where: { id },

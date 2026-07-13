@@ -25,6 +25,20 @@ export type CreatePendingTransactionItem = {
   quantity: number;
 };
 
+export type GatewayPaymentResult = {
+  status: TransactionStatus;
+  gatewayTransactionId?: string | null;
+  gatewayStatus?: string | null;
+  cardBrand?: string | null;
+  cardLastFour?: string | null;
+};
+
+export class TransactionCannotBeProcessedError extends Error {
+  constructor(transactionId: string | undefined) {
+    super(`Transaction ${transactionId ?? 'without id'} cannot be processed`);
+  }
+}
+
 export class Transaction {
   constructor(private readonly props: TransactionProps) {}
 
@@ -110,5 +124,32 @@ export class Transaction {
 
   get items(): TransactionItem[] {
     return this.props.items;
+  }
+
+  isApproved(): boolean {
+    return this.props.status === TransactionStatus.APPROVED;
+  }
+
+  ensureCanBeProcessed(): void {
+    if (this.props.status !== TransactionStatus.PENDING) {
+      throw new TransactionCannotBeProcessedError(this.props.id);
+    }
+  }
+
+  applyGatewayResult(result: GatewayPaymentResult): void {
+    this.ensureCanBeProcessed();
+
+    this.props.status = result.status;
+    this.props.gatewayTransactionId = result.gatewayTransactionId;
+    this.props.gatewayStatus = result.gatewayStatus;
+    this.props.cardBrand = result.cardBrand;
+    this.props.cardLastFour = result.cardLastFour;
+  }
+
+  markAsPaymentError(gatewayStatus = 'ERROR'): void {
+    this.ensureCanBeProcessed();
+
+    this.props.status = TransactionStatus.ERROR;
+    this.props.gatewayStatus = gatewayStatus;
   }
 }

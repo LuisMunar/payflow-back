@@ -18,6 +18,7 @@ describe('GetTransactionUseCase', () => {
     const findById = jest.fn().mockResolvedValue(transaction);
     const repository: jest.Mocked<TransactionsRepository> = {
       create: jest.fn(),
+      completePayment: jest.fn(),
       findById,
     };
     const useCase = new GetTransactionUseCase(repository);
