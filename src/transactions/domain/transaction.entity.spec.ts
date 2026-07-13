@@ -96,4 +96,40 @@ describe('Transaction', () => {
       TransactionCannotBeProcessedError,
     );
   });
+
+  it('describes processed transactions without id', () => {
+    const transaction = new Transaction({
+      reference: 'PF-reference',
+      status: TransactionStatus.APPROVED,
+      amountInCents: 18990000,
+      currency: 'COP',
+      customerName: 'Luis Munar',
+      customerEmail: 'luis@example.test',
+      items: [],
+    });
+
+    expect(() => transaction.ensureCanBeProcessed()).toThrow(
+      'Transaction without id cannot be processed',
+    );
+  });
+
+  it('exposes persisted timestamps', () => {
+    const createdAt = new Date('2026-07-13T00:00:00.000Z');
+    const updatedAt = new Date('2026-07-13T01:00:00.000Z');
+    const transaction = new Transaction({
+      id: '2f860c3a-c995-459e-b8f9-7a945dfd9157',
+      reference: 'PF-reference',
+      status: TransactionStatus.PENDING,
+      amountInCents: 18990000,
+      currency: 'COP',
+      customerName: 'Luis Munar',
+      customerEmail: 'luis@example.test',
+      createdAt,
+      updatedAt,
+      items: [],
+    });
+
+    expect(transaction.createdAt).toBe(createdAt);
+    expect(transaction.updatedAt).toBe(updatedAt);
+  });
 });

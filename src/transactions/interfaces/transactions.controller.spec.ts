@@ -96,4 +96,27 @@ describe('TransactionsController', () => {
       controller.getTransaction('2f860c3a-c995-459e-b8f9-7a945dfd9157'),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  it('rethrows unexpected creation errors', async () => {
+    const unexpectedError = new Error('Unexpected error');
+    const controller = new TransactionsController(
+      {
+        execute: jest.fn().mockRejectedValue(unexpectedError),
+      } as unknown as CreatePendingTransactionUseCase,
+      { execute: jest.fn() } as unknown as GetTransactionUseCase,
+    );
+
+    await expect(
+      controller.createTransaction({
+        customerName: 'Luis Munar',
+        customerEmail: 'luis@example.test',
+        items: [
+          {
+            productId: 'a5b95f3f-74ad-4f0d-9730-8b1f463a5a49',
+            quantity: 1,
+          },
+        ],
+      }),
+    ).rejects.toThrow(unexpectedError);
+  });
 });

@@ -176,4 +176,90 @@ describe('PrismaTransactionsRepository', () => {
     });
     expect(completed.status).toBe(TransactionStatus.APPROVED);
   });
+
+  it('completes a declined payment without decrementing product stock', async () => {
+    const updateTransaction = jest.fn<
+      Promise<PrismaTransactionWithItems>,
+      [Record<string, unknown>]
+    >().mockResolvedValue({
+      ...prismaTransaction,
+      status: 'DECLINED',
+      gatewayTransactionId: 'gateway-id',
+      gatewayStatus: 'DECLINED',
+    });
+    const updateProduct = jest.fn();
+    type TransactionClient = {
+      transaction: { update: typeof updateTransaction };
+      product: { update: typeof updateProduct };
+    };
+    type PrismaCallback = (
+      transactionClient: TransactionClient,
+    ) => Promise<PrismaTransactionWithItems>;
+    const transactionCallback = jest.fn((callback: PrismaCallback) =>
+      callback({
+        transaction: {
+          update: updateTransaction,
+        },
+        product: {
+          update: updateProduct,
+        },
+      }),
+    );
+    const prisma = {
+      $transaction: transactionCallback,
+      transaction: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+      },
+    } as unknown as PrismaService;
+    const repository = new PrismaTransactionsRepository(prisma);
+    const transaction = new Transaction({
+      id: prismaTransaction.id,
+      reference: prismaTransaction.reference,
+      status: TransactionStatus.DECLINED,
+      amountInCents: prismaTransaction.amountInCents,
+      currency: prismaTransaction.currency,
+      customerName: prismaTransaction.customerName,
+      customerEmail: prismaTransaction.customerEmail,
+      gatewayTransactionId: 'gateway-id',
+      gatewayStatus: 'DECLINED',
+      items: [
+        new TransactionItem({
+          productId: 'a5b95f3f-74ad-4f0d-9730-8b1f463a5a49',
+          quantity: 2,
+          unitPriceInCents: 18990000,
+          totalInCents: 37980000,
+        }),
+      ],
+    });
+
+    const completed = await repository.completePayment(transaction);
+
+    expect(updateProduct).not.toHaveBeenCalled();
+    expect(completed.status).toBe(TransactionStatus.DECLINED);
+  });
+
+  it('fails when completing a transaction without id', async () => {
+    const prisma = {
+      $transaction: jest.fn(),
+      transaction: {
+        create: jest.fn(),
+        findUnique: jest.fn(),
+      },
+    } as unknown as PrismaService;
+    const repository = new PrismaTransactionsRepository(prisma);
+    const transaction = new Transaction({
+      reference: 'PF-reference',
+      status: TransactionStatus.APPROVED,
+      amountInCents: 18990000,
+      currency: 'COP',
+      customerName: 'Luis Munar',
+      customerEmail: 'luis@example.test',
+      items: [],
+    });
+
+    await expect(repository.completePayment(transaction)).rejects.toThrow(
+      'Transaction id is required to complete payment',
+    );
+  });
 });
