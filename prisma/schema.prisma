@@ -6,16 +6,56 @@ datasource db {
   provider = "postgresql"
 }
 
+enum TransactionStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  ERROR
+}
+
 model Product {
-  id           String   @id @default(uuid())
-  name         String
-  description  String
-  priceInCents Int
-  currency     String   @default("COP")
-  stock        Int
-  imageUrl     String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id               String            @id @default(uuid())
+  name             String
+  description      String
+  priceInCents     Int
+  currency         String            @default("COP")
+  stock            Int
+  imageUrl         String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  transactionItems TransactionItem[]
 
   @@map("products")
+}
+
+model Transaction {
+  id                   String              @id @default(uuid())
+  reference            String              @unique
+  status               TransactionStatus   @default(PENDING)
+  amountInCents        Int
+  currency             String              @default("COP")
+  customerName         String
+  customerEmail        String
+  cardBrand            String?
+  cardLastFour         String?
+  gatewayTransactionId String?
+  gatewayStatus        String?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  items                TransactionItem[]
+
+  @@map("transactions")
+}
+
+model TransactionItem {
+  id               String      @id @default(uuid())
+  transactionId    String
+  productId        String
+  quantity         Int
+  unitPriceInCents Int
+  totalInCents     Int
+  transaction      Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  product          Product     @relation(fields: [productId], references: [id])
+
+  @@map("transaction_items")
 }

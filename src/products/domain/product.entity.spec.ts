@@ -1,4 +1,9 @@
-import { Product, ProductProps } from './product.entity';
+import {
+  InsufficientProductStockError,
+  InvalidProductQuantityError,
+  Product,
+  ProductProps,
+} from './product.entity';
 
 describe('Product', () => {
   const baseProps: ProductProps = {
@@ -33,5 +38,23 @@ describe('Product', () => {
 
   it('is not available when stock is zero', () => {
     expect(new Product({ ...baseProps, stock: 0 }).isAvailable()).toBe(false);
+  });
+
+  it('allows purchase when requested quantity is available', () => {
+    const product = new Product(baseProps);
+
+    expect(() => product.ensureCanPurchase(2)).not.toThrow();
+  });
+
+  it('fails when requested quantity is invalid', () => {
+    const product = new Product(baseProps);
+
+    expect(() => product.ensureCanPurchase(0)).toThrow(InvalidProductQuantityError);
+  });
+
+  it('fails when requested quantity exceeds stock', () => {
+    const product = new Product({ ...baseProps, stock: 1 });
+
+    expect(() => product.ensureCanPurchase(2)).toThrow(InsufficientProductStockError);
   });
 });

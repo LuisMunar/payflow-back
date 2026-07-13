@@ -10,6 +10,18 @@ export type ProductProps = {
   updatedAt: Date;
 };
 
+export class InvalidProductQuantityError extends Error {
+  constructor() {
+    super('Product quantity must be greater than zero');
+  }
+}
+
+export class InsufficientProductStockError extends Error {
+  constructor(productId: string) {
+    super(`Product ${productId} does not have enough stock`);
+  }
+}
+
 export class Product {
   constructor(private readonly props: ProductProps) {}
 
@@ -51,5 +63,15 @@ export class Product {
 
   isAvailable(): boolean {
     return this.props.stock > 0;
+  }
+
+  ensureCanPurchase(quantity: number): void {
+    if (quantity <= 0) {
+      throw new InvalidProductQuantityError();
+    }
+
+    if (this.props.stock < quantity) {
+      throw new InsufficientProductStockError(this.props.id);
+    }
   }
 }

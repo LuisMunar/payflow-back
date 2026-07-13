@@ -23,28 +23,31 @@ This API follows a pragmatic Hexagonal/Clean Architecture:
 
 ## Local Setup
 
-Install dependencies:
+Copy `.env.example` to `.env` and fill local values.
+
+Start the backend stack with Docker:
 
 ```bash
-npm install
+docker compose up -d --build
 ```
 
-Start PostgreSQL:
-
-```bash
-docker compose up -d postgres
-```
-
-Run migrations and seed products:
+Run migrations and seed products when needed:
 
 ```bash
 npm run prisma:deploy
 npm run prisma:seed
 ```
 
-Start the API:
+The API runs at:
+
+```text
+http://localhost:3000
+```
+
+For local development outside Docker, install dependencies and start NestJS:
 
 ```bash
+npm install
 npm run start:dev
 ```
 
@@ -65,7 +68,28 @@ Coverage target: more than 80%.
 GET /health
 GET /products
 GET /products/:id
+POST /transactions
+GET /transactions/:id
 ```
+
+Create a pending transaction:
+
+```bash
+curl -X POST http://localhost:3000/transactions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "customerName": "Luis Munar",
+    "customerEmail": "luis@example.com",
+    "items": [
+      {
+        "productId": "a5b95f3f-74ad-4f0d-9730-8b1f463a5a49",
+        "quantity": 2
+      }
+    ]
+  }'
+```
+
+The backend validates stock and calculates totals server-side. Stock is not decremented when the transaction is created as `PENDING`; it must be decremented only after an approved payment.
 
 ## Database
 

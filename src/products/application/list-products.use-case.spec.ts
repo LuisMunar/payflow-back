@@ -21,6 +21,7 @@ describe('ListProductsUseCase', () => {
     const repository: jest.Mocked<ProductsRepository> = {
       findAll,
       findById: jest.fn(),
+      findByIds: jest.fn(),
     };
     const useCase = new ListProductsUseCase(repository);
 
