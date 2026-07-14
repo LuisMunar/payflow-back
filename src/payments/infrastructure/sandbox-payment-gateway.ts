@@ -47,7 +47,7 @@ type GatewayTransactionResponse = {
 };
 
 @Injectable()
-export class WompiPaymentGateway implements PaymentGateway {
+export class SandboxPaymentGateway implements PaymentGateway {
   private readonly baseUrl: string;
   private readonly publicKey: string;
   private readonly privateKey: string;

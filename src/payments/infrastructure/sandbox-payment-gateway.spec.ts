@@ -1,9 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { TransactionStatus } from '../../transactions/domain/transaction-status';
 import { PaymentGatewayError } from '../domain/payment-gateway';
-import { WompiPaymentGateway } from './wompi-payment-gateway';
+import { SandboxPaymentGateway } from './sandbox-payment-gateway';
 
-describe('WompiPaymentGateway', () => {
+describe('SandboxPaymentGateway', () => {
   const input = {
     reference: 'PF-reference',
     amountInCents: 18990000,
@@ -73,7 +73,7 @@ describe('WompiPaymentGateway', () => {
           },
         }),
       );
-    const gateway = new WompiPaymentGateway(configService);
+    const gateway = new SandboxPaymentGateway(configService);
 
     const result = await gateway.processCardPayment(input);
 
@@ -105,7 +105,7 @@ describe('WompiPaymentGateway', () => {
         401,
       ),
     );
-    const gateway = new WompiPaymentGateway(configService);
+    const gateway = new SandboxPaymentGateway(configService);
 
     await expect(gateway.processCardPayment(input)).rejects.toBeInstanceOf(
       PaymentGatewayError,
@@ -139,7 +139,7 @@ describe('WompiPaymentGateway', () => {
           },
         }),
       );
-    const gateway = new WompiPaymentGateway(configService);
+    const gateway = new SandboxPaymentGateway(configService);
 
     const paymentResult = gateway.processCardPayment(input);
     await jest.advanceTimersByTimeAsync(1000);
@@ -163,7 +163,7 @@ describe('WompiPaymentGateway', () => {
           },
         }),
       );
-    const gateway = new WompiPaymentGateway(configService);
+    const gateway = new SandboxPaymentGateway(configService);
 
     const result = await gateway.processCardPayment(input);
 
@@ -179,7 +179,7 @@ describe('WompiPaymentGateway', () => {
       .mockResolvedValueOnce(createCardTokenResponse())
       .mockResolvedValueOnce(createPendingTransactionResponse())
       .mockResolvedValue(createPendingTransactionResponse());
-    const gateway = new WompiPaymentGateway(configService);
+    const gateway = new SandboxPaymentGateway(configService);
 
     const paymentResult = gateway.processCardPayment(input);
 
@@ -210,7 +210,7 @@ describe('WompiPaymentGateway', () => {
         }),
       )
       .mockResolvedValue(createPendingTransactionResponse());
-    const gateway = new WompiPaymentGateway(configService);
+    const gateway = new SandboxPaymentGateway(configService);
 
     const paymentResult = gateway.processCardPayment(input);
 
@@ -226,7 +226,7 @@ describe('WompiPaymentGateway', () => {
 
   it('wraps network failures as payment gateway errors', async () => {
     jest.spyOn(globalThis, 'fetch').mockRejectedValueOnce(new Error('Network down'));
-    const gateway = new WompiPaymentGateway(configService);
+    const gateway = new SandboxPaymentGateway(configService);
 
     await expect(gateway.processCardPayment(input)).rejects.toBeInstanceOf(
       PaymentGatewayError,
@@ -251,7 +251,7 @@ describe('WompiPaymentGateway', () => {
           },
         }),
       );
-    const gateway = new WompiPaymentGateway(configService);
+    const gateway = new SandboxPaymentGateway(configService);
 
     const result = await gateway.processCardPayment(input);
 
