@@ -299,6 +299,17 @@ Run tests with coverage:
 npm run test:cov
 ```
 
+Latest coverage result:
+
+```text
+Test Suites: 22 passed, 22 total
+Tests:       68 passed, 68 total
+Statements:  99.72%
+Branches:   100.00%
+Functions:   99.12%
+Lines:      100.00%
+```
+
 The coverage report is generated at:
 
 ```text
